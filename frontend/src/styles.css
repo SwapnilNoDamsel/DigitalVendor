@@ -1,13 +1,25 @@
 :root {
-  --primary: #2feb25;
+  /* Refined brand palette — same hue family as your original pink,
+     but a deeper, more confident tone for actions + a much calmer
+     tint for the page background so it doesn't fight your content. */
+  --primary: hsl(322, 65%, 46%);
+  --primary-dark: hsl(322, 65%, 38%);
+  --primary-soft: hsl(322, 65%, 96%);
+
   --ink: #111827;
   --muted: #64748b;
+  --border: #e7ebf2;
 
   /* ONE COMMON WEBSITE BACKGROUND */
-  --page-bg: hsl(304, 57%, 88%);
+  --page-bg: hsl(322, 38%, 97%);
 
   /* CARD BACKGROUND */
   --card-bg: #ffffff;
+
+  /* Motion */
+  --ease: cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-fast: 150ms var(--ease);
+  --transition-base: 240ms var(--ease);
 }
 
 /* ==============================
@@ -16,28 +28,62 @@
 
 html,
 body,
-#root {
-  margin: 0;
-  min-height: 100%;
-  background: var(--page-bg) !important;
+#root,
+.navbar,
+.navbar.bg-white,
+.navbar-light,
+main,
+section,
+.hero,
+.auth-page,
+.shop-cover,
+#features {
+  background-color: var(--page-bg) !important;
+}
+
+html {
+  scroll-behavior: smooth;
 }
 
 body {
+  margin: 0;
+  min-height: 100%;
   font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont,
     "Segoe UI", sans-serif;
   color: var(--ink);
 }
 
-/* ==============================
-   ALL MAIN PAGE SECTIONS
-   ============================== */
+::selection {
+  background: var(--primary-soft);
+  color: var(--primary-dark);
+}
 
-main,
-section,
-.hero,
-.auth-page,
-.shop-cover {
-  background: var(--page-bg) !important;
+a,
+button,
+.btn,
+.feature-card,
+.feature-modern,
+input,
+select,
+textarea {
+  transition: color var(--transition-fast), background-color var(--transition-fast),
+    border-color var(--transition-fast), box-shadow var(--transition-fast),
+    transform var(--transition-fast);
+}
+
+:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }
 
 /* ==============================
@@ -54,6 +100,41 @@ section,
 
 .navbar-brand {
   letter-spacing: -0.5px;
+}
+
+/* ==============================
+   BUTTONS (Bootstrap overrides)
+   ============================== */
+
+.btn {
+  border-radius: 12px;
+  font-weight: 600;
+  padding: 0.6rem 1.25rem;
+}
+
+.btn:active {
+  transform: translateY(1px);
+}
+
+.btn-primary {
+  background: var(--primary);
+  border-color: var(--primary);
+}
+
+.btn-primary:hover,
+.btn-primary:focus {
+  background: var(--primary-dark);
+  border-color: var(--primary-dark);
+}
+
+.btn-outline-primary {
+  color: var(--primary);
+  border-color: var(--primary);
+}
+
+.btn-outline-primary:hover {
+  background: var(--primary);
+  border-color: var(--primary);
 }
 
 /* ==============================
@@ -85,6 +166,7 @@ section,
   color: #fff;
   border-radius: 24px;
   padding: 28px;
+  box-shadow: 0 20px 45px rgba(17, 24, 39, 0.25);
 }
 
 .metric-grid {
@@ -97,6 +179,11 @@ section,
   background: #1f2937;
   padding: 15px;
   border-radius: 14px;
+  transition: background var(--transition-base);
+}
+
+.metric-grid div:hover {
+  background: #26314a;
 }
 
 .metric-grid small {
@@ -114,35 +201,55 @@ section,
   display: block;
   width: 14%;
   border-radius: 6px 6px 2px 2px;
-  background: #60a5fa;
+  background: linear-gradient(180deg, #93c5fd 0%, #60a5fa 100%);
+  transform-origin: bottom;
+  animation: grow-bar 700ms var(--ease) both;
+}
+
+@keyframes grow-bar {
+  from {
+    transform: scaleY(0);
+    opacity: 0;
+  }
+  to {
+    transform: scaleY(1);
+    opacity: 1;
+  }
 }
 
 .mini-bars i:nth-child(1) {
   height: 30%;
+  animation-delay: 40ms;
 }
 
 .mini-bars i:nth-child(2) {
   height: 52%;
+  animation-delay: 80ms;
 }
 
 .mini-bars i:nth-child(3) {
   height: 42%;
+  animation-delay: 120ms;
 }
 
 .mini-bars i:nth-child(4) {
   height: 75%;
+  animation-delay: 160ms;
 }
 
 .mini-bars i:nth-child(5) {
   height: 60%;
+  animation-delay: 200ms;
 }
 
 .mini-bars i:nth-child(6) {
   height: 88%;
+  animation-delay: 240ms;
 }
 
 .mini-bars i:nth-child(7) {
   height: 70%;
+  animation-delay: 280ms;
 }
 
 /* ==============================
@@ -154,7 +261,6 @@ section,
   border: 1px solid #e8ecf3;
   border-radius: 18px;
   padding: 22px;
-  transition: 0.2s;
 }
 
 .feature-card:hover {
@@ -174,6 +280,81 @@ section,
   margin-bottom: 25px;
 }
 
+/* ================================
+   MODERN HOMEPAGE FEATURES
+================================ */
+
+.feature-modern {
+  position: relative;
+  padding: 28px;
+  border: 1px solid rgba(17, 24, 39, 0.08);
+  border-radius: 18px;
+  background: #ffffff;
+  overflow: hidden;
+}
+
+.feature-modern::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, var(--primary-soft), transparent 60%);
+  opacity: 0;
+  transition: opacity var(--transition-base);
+  pointer-events: none;
+}
+
+.feature-modern:hover {
+  transform: translateY(-6px);
+  box-shadow: 0 14px 35px rgba(17, 24, 39, 0.1);
+}
+
+.feature-modern:hover::before {
+  opacity: 1;
+}
+
+.feature-icon {
+  position: relative;
+  width: 54px;
+  height: 54px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 14px;
+  background: var(--primary-soft);
+  font-size: 25px;
+  margin-bottom: 20px;
+}
+
+.feature-modern .feature-no {
+  position: absolute;
+  top: 24px;
+  right: 25px;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  color: #94a3b8;
+}
+
+.feature-modern h5 {
+  position: relative;
+  font-weight: 700;
+  margin-bottom: 10px;
+}
+
+.feature-modern p {
+  position: relative;
+  color: #64748b;
+  margin: 0;
+  line-height: 1.65;
+  font-size: 14px;
+}
+
+#features .eyebrow {
+  letter-spacing: 1.5px;
+  font-size: 12px;
+  font-weight: 700;
+}
+
 /* ==============================
    LOGIN / REGISTER
    ============================== */
@@ -191,16 +372,40 @@ section,
   border-radius: 22px;
   padding: 32px;
   box-shadow: 0 15px 50px #0f172a12;
+  animation: card-in 320ms var(--ease) both;
 }
 
 .auth-card.wide {
   width: min(520px, 92vw);
 }
 
+@keyframes card-in {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
 label {
   font-size: 0.86rem;
   font-weight: 700;
   margin-bottom: 6px;
+}
+
+.form-control,
+.form-select {
+  border-radius: 10px;
+  border-color: var(--border);
+}
+
+.form-control:focus,
+.form-select:focus {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px var(--primary-soft);
 }
 
 /* ==============================
@@ -221,6 +426,11 @@ label {
   padding: 22px;
 }
 
+.stat-card:hover {
+  border-color: var(--primary);
+  box-shadow: 0 10px 26px rgba(0, 0, 0, 0.06);
+}
+
 .stat-card small {
   color: var(--muted);
 }
@@ -238,6 +448,12 @@ label {
   width: 100%;
   height: 180px;
   object-fit: cover;
+  transition: transform 400ms var(--ease);
+}
+
+.product-card:hover .product-img,
+.product-admin:hover .public-product-img {
+  transform: scale(1.05);
 }
 
 .public-product-img {
@@ -256,6 +472,12 @@ label {
 .product-card {
   overflow: hidden;
   border-radius: 18px;
+  transition: box-shadow var(--transition-base), transform var(--transition-base);
+}
+
+.product-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 14px 32px rgba(15, 23, 42, 0.1);
 }
 
 /* ==============================
@@ -324,6 +546,19 @@ label {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  box-shadow: 0 16px 40px rgba(17, 24, 39, 0.3);
+  animation: cart-in 260ms var(--ease) both;
+}
+
+@keyframes cart-in {
+  from {
+    opacity: 0;
+    transform: translate(-50%, 16px);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, 0);
+  }
 }
 
 /* ==============================
@@ -338,6 +573,16 @@ label {
   display: grid;
   place-items: center;
   padding: 20px;
+  animation: fade-in 200ms var(--ease) both;
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
 }
 
 .checkout-modal {
@@ -347,6 +592,7 @@ label {
   background: var(--card-bg);
   border-radius: 22px;
   padding: 26px;
+  animation: card-in 260ms var(--ease) both;
 }
 
 /* ==============================
@@ -358,12 +604,27 @@ label {
 }
 
 .status-flow {
+  position: relative;
   display: flex;
   justify-content: space-between;
   gap: 5px;
 }
 
+/* connecting progress line behind the step circles */
+.status-flow::before {
+  content: "";
+  position: absolute;
+  top: 17px;
+  left: 8%;
+  right: 8%;
+  height: 2px;
+  background: #e2e8f0;
+  z-index: 0;
+}
+
 .status-flow div {
+  position: relative;
+  z-index: 1;
   flex: 1;
   text-align: center;
   color: #94a3b8;
@@ -377,6 +638,7 @@ label {
   place-items: center;
   margin: auto;
   background: #e2e8f0;
+  transition: background var(--transition-base), color var(--transition-base);
 }
 
 .status-flow .active {
@@ -385,8 +647,9 @@ label {
 }
 
 .status-flow .active span {
-  background: #dbeafe;
+  background: var(--primary-soft);
   color: var(--primary);
+  box-shadow: 0 0 0 4px var(--primary-soft);
 }
 
 .status-flow small {
@@ -426,79 +689,4 @@ label {
     width: 28px;
     height: 28px;
   }
-}
-html,
-body,
-#root,
-.navbar,
-.navbar.bg-white,
-.navbar-light,
-main,
-section,
-.hero,
-.auth-page,
-.shop-cover {
-  background-color: var(--page-bg) !important;
-}
-/* ================================
-   MODERN HOMEPAGE FEATURES
-================================ */
-
-.feature-modern {
-  position: relative;
-  padding: 28px;
-  border: 1px solid rgba(17, 24, 39, 0.08);
-  border-radius: 18px;
-  background: #ffffff;
-  transition: transform 0.25s ease, box-shadow 0.25s ease;
-  overflow: hidden;
-}
-
-.feature-modern:hover {
-  transform: translateY(-6px);
-  box-shadow: 0 14px 35px rgba(17, 24, 39, 0.10);
-}
-
-.feature-icon {
-  width: 54px;
-  height: 54px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 14px;
-  background: #eef4ff;
-  font-size: 25px;
-  margin-bottom: 20px;
-}
-
-.feature-modern .feature-no {
-  position: absolute;
-  top: 24px;
-  right: 25px;
-  font-size: 12px;
-  font-weight: 700;
-  letter-spacing: 1px;
-  color: #94a3b8;
-}
-
-.feature-modern h5 {
-  font-weight: 700;
-  margin-bottom: 10px;
-}
-
-.feature-modern p {
-  color: #64748b;
-  margin: 0;
-  line-height: 1.65;
-  font-size: 14px;
-}
-
-#features {
-  background: var(--page-bg) !important;
-}
-
-#features .eyebrow {
-  letter-spacing: 1.5px;
-  font-size: 12px;
-  font-weight: 700;
 }
