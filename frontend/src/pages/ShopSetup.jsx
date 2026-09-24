@@ -6,8 +6,10 @@ export default function ShopSetup(){
  const [form,setForm]=useState(blank),[logo,setLogo]=useState(null),[upiQr,setUpiQr]=useState(null),[shop,setShop]=useState(null),[error,setError]=useState(""),[saving,setSaving]=useState(false); const nav=useNavigate();
  useEffect(()=>{api.get("/shop/me").then(r=>{if(r.data){setShop(r.data);setForm({shopName:r.data.shop_name||"",category:r.data.category||"",ownerName:r.data.owner_name||"",mobile:r.data.mobile||"",address:r.data.address||"",openingTime:r.data.opening_time?.slice(0,5)||"",closingTime:r.data.closing_time?.slice(0,5)||"",upiId:r.data.upi_id||""})}})},[]);
  const submit=async e=>{e.preventDefault();setSaving(true);setError("");const fd=new FormData();Object.entries(form).forEach(([k,v])=>fd.append(k,v));if(logo)fd.append("logo",logo);if(upiQr)fd.append("upiQr",upiQr);try{const r=shop?await api.put("/shop",fd):await api.post("/shop",fd); if(!shop){setShop({slug:r.data.slug});}else{const rr=await api.get("/shop/me");setShop(rr.data)} }catch(e){setError(e.response?.data?.message||"Something went wrong")}finally{setSaving(false)}};
- const url=shop?.slug?`${location.origin}/shop/${shop.slug}`:"";
- return <main className="container py-5"><div className="page-head"><div><span className="eyebrow">SHOP SETUP</span><h2 className="fw-bold">{shop?"Edit your shop":"Create your online shop"}</h2><p className="text-secondary">No technical knowledge required.</p></div></div>{error&&<div className="alert alert-danger">{error}</div>}<form onSubmit={submit} className="card border-0 shadow-sm p-4"><div className="row g-3">
+const url = shop?.slug
+  ? `https://digital-vendor-dpsc.vercel.app/shop/${shop.slug}`
+  : "";
+   return <main className="container py-5"><div className="page-head"><div><span className="eyebrow">SHOP SETUP</span><h2 className="fw-bold">{shop?"Edit your shop":"Create your online shop"}</h2><p className="text-secondary">No technical knowledge required.</p></div></div>{error&&<div className="alert alert-danger">{error}</div>}<form onSubmit={submit} className="card border-0 shadow-sm p-4"><div className="row g-3">
  {[
   ["shopName","Shop Name"],["ownerName","Owner Name"],["mobile","Contact Number"],["category","Shop Category"],["address","Shop Address"]
  ].map(([k,l])=><div className={k==="address"?"col-12":"col-md-6"} key={k}><label>{l}</label><input className="form-control" value={form[k]} onChange={e=>setForm({...form,[k]:e.target.value})} required/></div>)}
