@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
 import { Html5Qrcode } from "html5-qrcode";
-import api, { BACKEND } from "../api";
+import api from "../api";
+import { assetUrl, productEmoji } from "../utils/product";
 
 export default function PublicShop() {
   const { slug } = useParams();
@@ -71,16 +72,6 @@ export default function PublicShop() {
       [p.id]: Math.min(p.stock, (cart[p.id] || 0) + 1)
     });
 
-  const assetUrl = (url) => {
-    if (!url) return "";
-
-    if (url.startsWith("http://") || url.startsWith("https://")) {
-      return url;
-    }
-
-    return `${BACKEND}${url}`;
-  };
-
   return (
     <main className="pb-5">
 
@@ -103,23 +94,33 @@ export default function PublicShop() {
               </div>
             )}
 
-            <div>
+            <div className="flex-grow-1">
               <span className="eyebrow">
                 {shop.category}
               </span>
 
-              <h1 className="fw-bold">
+              <h1 className="fw-bold mb-2">
                 {shop.shop_name}
               </h1>
 
-              <p className="mb-1">
-                {shop.address}
+              <p className="mb-2 text-secondary">
+                📍 {shop.address}
               </p>
 
-              <small>
-                Open {shop.opening_time?.slice(0, 5)} –{" "}
-                {shop.closing_time?.slice(0, 5)}
-              </small>
+              <div className="shop-meta-row">
+                <span>
+                  🕘 {shop.opening_time?.slice(0, 5)} –{" "}
+                  {shop.closing_time?.slice(0, 5)}
+                </span>
+
+                {shop.owner_name && (
+                  <span>👤 {shop.owner_name}</span>
+                )}
+
+                {shop.mobile && (
+                  <span>📞 {shop.mobile}</span>
+                )}
+              </div>
             </div>
 
           </div>
@@ -170,44 +171,60 @@ export default function PublicShop() {
 
               <div className="card product-card h-100 border-0 shadow-sm">
 
-                {p.image_url ? (
-                  <img
-                    src={assetUrl(p.image_url)}
-                    className="public-product-img"
-                    alt={p.name}
-                  />
-                ) : (
-                  <div className="product-placeholder">
-                    No Image
-                  </div>
-                )}
+                <div className="product-image-wrap">
+                  {p.image_url ? (
+                    <img
+                      src={assetUrl(p.image_url)}
+                      className="public-product-img"
+                      alt={p.name}
+                    />
+                  ) : (
+                    <div className="product-placeholder product-fallback">
+                      <span>{productEmoji(p)}</span>
+                      <small>{p.category || "Product"}</small>
+                    </div>
+                  )}
 
-                <div className="p-3">
+                  {Number(p.stock) <= 5 && Number(p.stock) > 0 && (
+                    <span className="low-stock-badge product-stock-badge">
+                      ONLY {p.stock} LEFT
+                    </span>
+                  )}
+                </div>
+
+                <div className="p-3 d-flex flex-column">
 
                   <span className="small text-secondary">
-                    {p.category}
+                    {p.category || "General"}
                   </span>
 
-                  <h5 className="mt-1">
+                  <h5 className="mt-1 mb-1">
                     {p.name}
                   </h5>
 
-                  <p className="small text-secondary">
-                    {p.description}
+                  <p className="small text-secondary product-description mb-3">
+                    {p.description || "Quality product from this local shop."}
                   </p>
 
-                  <div className="d-flex justify-content-between align-items-center">
+                  <div className="d-flex justify-content-between align-items-center mt-auto">
 
-                    <b>
-                      ₹{Number(p.price).toFixed(2)}
-                    </b>
+                    <div>
+                      <b className="fs-5">
+                        ₹{Number(p.price).toFixed(2)}
+                      </b>
+                      <div className="small text-secondary">
+                        {Number(p.stock) > 0
+                          ? `${p.stock} available`
+                          : "Currently unavailable"}
+                      </div>
+                    </div>
 
                     {p.stock > 0 ? (
                       <button
                         className="btn btn-sm btn-primary"
                         onClick={() => add(p)}
                       >
-                        Add
+                        Add to cart
                       </button>
                     ) : (
                       <span className="badge bg-secondary">
@@ -216,10 +233,6 @@ export default function PublicShop() {
                     )}
 
                   </div>
-
-                  <small className="text-secondary">
-                    {p.stock} available
-                  </small>
 
                 </div>
 
@@ -324,6 +337,7 @@ function Checkout({
   const [scanning, setScanning] = useState(false);
   const [qrScanned, setQrScanned] = useState(false);
   const [scanMessage, setScanMessage] = useState("");
+  const [paymentLink, setPaymentLink] = useState("");
 
   /* =========================
      OPEN CHECKOUT
@@ -393,6 +407,7 @@ function Checkout({
 
     setScanMessage("");
     setQrScanned(false);
+    setPaymentLink("");
 
     try {
 
@@ -428,48 +443,26 @@ function Checkout({
             decodedText
           );
 
-          setQrScanned(true);
-
-          setScanMessage(
-            "QR scanned successfully! Opening payment..."
-          );
+          const isPaymentLink =
+            decodedText.startsWith("upi://") ||
+            decodedText.startsWith("http://") ||
+            decodedText.startsWith("https://");
 
           await stopScanner();
 
-          /*
-           * If the vendor QR contains a UPI payment
-           * link, open it.
-           */
-          if (
-            decodedText.startsWith("upi://")
-          ) {
-
-            window.location.href =
-              decodedText;
-
-          } else {
-
-            /*
-             * Some QR codes may contain another
-             * payment URL.
-             */
-            if (
-              decodedText.startsWith("http://") ||
-              decodedText.startsWith("https://")
-            ) {
-
-              window.location.href =
-                decodedText;
-
-            } else {
-
-              setScanMessage(
-                "QR detected, but it is not a UPI payment QR."
-              );
-
-            }
-
+          if (!isPaymentLink) {
+            setQrScanned(false);
+            setScanMessage(
+              "QR detected, but it is not a UPI payment QR."
+            );
+            return;
           }
+
+          setPaymentLink(decodedText);
+          setQrScanned(true);
+          setScanMessage(
+            "QR scanned successfully. Open the payment app, complete the payment, then place your order."
+          );
 
         },
 
@@ -504,6 +497,7 @@ function Checkout({
       await stopScanner();
       setQrScanned(false);
       setScanMessage("");
+      setPaymentLink("");
     }
 
     setForm({
@@ -800,16 +794,24 @@ function Checkout({
 
                   <div className="alert alert-success mt-3 mb-0">
 
-                    ✅ QR scanned successfully.
+                    <strong>✅ QR scanned successfully.</strong>
 
                     <br />
 
-                    Complete the payment in your
-                    UPI app, then click{" "}
-                    <b>
-                      "I've Completed Payment"
-                    </b>
-                    below.
+                    Open the payment app, complete the payment,
+                    then place the order below.
+
+                    {paymentLink && (
+                      <button
+                        type="button"
+                        className="btn btn-success btn-sm w-100 mt-3"
+                        onClick={() => {
+                          window.location.href = paymentLink;
+                        }}
+                      >
+                        Open UPI Payment App
+                      </button>
+                    )}
 
                   </div>
 

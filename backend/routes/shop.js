@@ -1,19 +1,6 @@
 const auth = require("../middleware/auth");
 const upload = require("../middleware/upload");
 const QRCode = require("qrcode");
-const cloudinary = require("cloudinary").v2;
-
-
-// =========================
-// CLOUDINARY CONFIGURATION
-// =========================
-cloudinary.config({
-  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
-  api_key: process.env.CLOUDINARY_API_KEY,
-  api_secret: process.env.CLOUDINARY_API_SECRET
-});
-
-
 // =========================
 // SLUGIFY
 // =========================
@@ -26,35 +13,7 @@ function slugify(value) {
 }
 
 
-// =========================
-// UPLOAD BUFFER TO CLOUDINARY
-// =========================
-function uploadBufferToCloudinary(file, folder) {
-  return new Promise((resolve, reject) => {
-
-    if (!file) {
-      return resolve(null);
-    }
-
-    const stream = cloudinary.uploader.upload_stream(
-      {
-        folder,
-        resource_type: "image"
-      },
-      (error, result) => {
-
-        if (error) {
-          reject(error);
-        } else {
-          resolve(result);
-        }
-
-      }
-    );
-
-    stream.end(file.buffer);
-  });
-}
+const { uploadBufferToCloudinary } = require("../utils/cloudinary");
 
 
 // =========================

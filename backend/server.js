@@ -1,19 +1,13 @@
 require("dotenv").config();
 const express = require("express");
 const cors = require("cors");
-const path = require("path");
-const fs = require("fs");
 const mysql = require("mysql2/promise");
 
 const app = express();
 const PORT = process.env.PORT || 5000;
 
-const uploadDir = path.join(__dirname, "uploads");
-if (!fs.existsSync(uploadDir)) fs.mkdirSync(uploadDir, { recursive: true });
-
 app.use(cors({ origin: true, credentials: true }));
 app.use(express.json({ limit: "2mb" }));
-app.use("/uploads", express.static(uploadDir));
 
 const pool = mysql.createPool({
   host: process.env.DB_HOST || "localhost",
@@ -39,7 +33,11 @@ app.get("/api/health", async (req, res) => {
     await pool.query("SELECT 1");
     res.json({ ok: true, message: "DigitalVendor API is running" });
   } catch (e) {
-    res.status(500).json({ ok: false, message: "Database connection failed", error: e.message });
+    res.status(500).json({
+      ok: false,
+      message: "Database connection failed",
+      error: e.message
+    });
   }
 });
 
@@ -54,4 +52,6 @@ app.use((err, req, res, next) => {
   res.status(500).json({ message: err.message || "Server error" });
 });
 
-app.listen(PORT, () => console.log(`DigitalVendor backend running on http://localhost:${PORT}`));
+app.listen(PORT, () => {
+  console.log(`DigitalVendor backend running on port ${PORT}`);
+});

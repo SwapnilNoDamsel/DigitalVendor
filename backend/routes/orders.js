@@ -56,7 +56,14 @@ module.exports = (app, db) => {
   app.get("/api/orders/vendor", auth, async (req, res) => {
     const shop = await getShop(db, req.vendor.id);
     if (!shop) return res.json([]);
-    const [orders] = await db.query("SELECT * FROM orders WHERE shop_id=? ORDER BY created_at DESC", [shop.id]);
+const [orders] = await db.query(
+  `SELECT o.*,
+          ROW_NUMBER() OVER (ORDER BY o.id ASC) AS vendor_order_number
+   FROM orders o
+   WHERE o.shop_id=?
+   ORDER BY o.created_at DESC`,
+  [shop.id]
+);
     for (const o of orders) {
       const [items] = await db.query("SELECT * FROM order_items WHERE order_id=?", [o.id]);
       o.items = items;

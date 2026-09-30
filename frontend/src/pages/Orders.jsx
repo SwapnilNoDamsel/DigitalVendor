@@ -2,11 +2,18 @@ import { useEffect, useState } from "react";
 import api from "../api";
 import StatusBadge from "../components/StatusBadge";
 
-const statuses = ["NEW", "ACCEPTED", "PREPARING", "READY", "DELIVERED"];
+const statuses = [
+  { value: "NEW", label: "New", icon: "1" },
+  { value: "ACCEPTED", label: "Accepted", icon: "2" },
+  { value: "PREPARING", label: "Preparing", icon: "3" },
+  { value: "READY", label: "Ready", icon: "4" },
+  { value: "DELIVERED", label: "Delivered", icon: "5" }
+];
 
 export default function Orders() {
   const [orders, setOrders] = useState([]);
   const [updatingPayment, setUpdatingPayment] = useState(null);
+  const [updatingStatus, setUpdatingStatus] = useState(null);
 
   const load = async () => {
     try {
@@ -23,10 +30,16 @@ export default function Orders() {
 
   const updateStatus = async (id, status) => {
     try {
+      setUpdatingStatus(id);
       await api.patch(`/orders/${id}/status`, { status });
       await load();
     } catch (err) {
-      alert(err.response?.data?.message || "Could not update order status");
+      alert(
+        err.response?.data?.message ||
+          "Could not update order status"
+      );
+    } finally {
+      setUpdatingStatus(null);
     }
   };
 
@@ -49,147 +62,242 @@ export default function Orders() {
     }
   };
 
+  const statusIndex = (status) =>
+    Math.max(
+      0,
+      statuses.findIndex((item) => item.value === status)
+    );
+
   return (
     <main className="container py-5">
       <div className="page-head">
         <div>
           <span className="eyebrow">ORDER MANAGEMENT</span>
           <h2 className="fw-bold">Customer Orders</h2>
+          <p className="text-secondary mb-0">
+            Accept orders, confirm payments and move each order through its delivery journey.
+          </p>
+        </div>
+
+        <div className="catalog-count">
+          <strong>{orders.length}</strong>
+          <span>Orders</span>
         </div>
       </div>
 
       {!orders.length && (
         <div className="empty">
-          No orders yet. Orders from your public shop will appear here.
+          <div className="fs-1 mb-2">🛒</div>
+          <h5>No orders yet</h5>
+          <p className="mb-0">
+            Orders from your public shop will appear here.
+          </p>
         </div>
       )}
 
-      <div className="row g-3">
-        {orders.map((o) => (
-          <div className="col-lg-6" key={o.id}>
-            <div className="card border-0 shadow-sm p-4">
+      <div className="row g-4">
+        {orders.map((o) => {
+          const currentIndex = statusIndex(o.status);
 
-              {/* Order Header */}
-              <div className="d-flex justify-content-between align-items-start">
-                <div>
-                   <h5 className="mb-1">
-  Order #{o.vendor_order_number}
-</h5>
-                  <small className="text-secondary">
-                    {new Date(o.created_at).toLocaleString()}
-                  </small>
+          return (
+            <div className="col-xl-6" key={o.id}>
+              <div className="card order-card border-0 shadow-sm h-100">
+
+                {/* Header */}
+                <div className="p-4 pb-3">
+                  <div className="d-flex justify-content-between align-items-start gap-3">
+                    <div>
+                      <span className="dashboard-label">
+                        ORDER #{o.vendor_order_number}
+                      </span>
+
+                      <h5 className="mb-1 mt-1">
+                        {o.customer_name}
+                      </h5>
+
+                      <small className="text-secondary">
+                        {new Date(o.created_at).toLocaleString("en-IN", {
+                          dateStyle: "medium",
+                          timeStyle: "short"
+                        })}
+                      </small>
+                    </div>
+
+                    <StatusBadge status={o.status} />
+                  </div>
                 </div>
 
-                <StatusBadge status={o.status} />
-              </div>
+                {/* Customer */}
+                <div className="order-customer-strip mx-4">
+                  <div>
+                    <small>Customer</small>
+                    <strong>{o.customer_mobile}</strong>
+                  </div>
 
-              <hr />
+                  <div>
+                    <small>Delivery</small>
+                    <strong>{o.delivery_address}</strong>
+                  </div>
+                </div>
 
-              {/* Customer Details */}
-              <p className="mb-1">
-                <b>{o.customer_name}</b> • {o.customer_mobile}
-              </p>
+                {/* Items */}
+                <div className="px-4 pt-3">
+                  <span className="dashboard-label">ITEMS</span>
 
-              <p className="small text-secondary">
-                {o.delivery_address}
-              </p>
+                  <div className="order-items-list mt-2">
+                    {o.items?.map((i) => (
+                      <div
+                        className="order-item-row"
+                        key={i.id}
+                      >
+                        <div>
+                          <strong>{i.product_name}</strong>
+                          <span> × {i.quantity}</span>
+                        </div>
 
-              {/* Products */}
-              <ul className="small">
-                {o.items?.map((i) => (
-                  <li key={i.id}>
-                    {i.product_name} × {i.quantity} — ₹
-                    {Number(i.subtotal).toFixed(2)}
-                  </li>
-                ))}
-              </ul>
+                        <b>
+                          ₹{Number(i.subtotal).toFixed(2)}
+                        </b>
+                      </div>
+                    ))}
+                  </div>
+                </div>
 
-              <hr />
+                {/* Total + payment */}
+                <div className="order-total-row mx-4 mt-3">
+                  <span>Total</span>
+                  <strong>
+                    ₹{Number(o.total).toFixed(2)}
+                  </strong>
+                </div>
 
-              {/* Total + Payment */}
-              <div className="d-flex justify-content-between align-items-center">
-                <b>
-                  Total ₹{Number(o.total).toFixed(2)}
-                </b>
+                <div className="px-4 pt-3">
+                  <div className="payment-summary">
+                    <div>
+                      <small>Payment method</small>
+                      <strong>
+                        {o.payment_method === "UPI"
+                          ? "UPI"
+                          : "Cash on Delivery"}
+                      </strong>
+                    </div>
 
-                <span
-                  className={
-                    o.payment_status === "PAID"
-                      ? "text-success fw-bold"
-                      : "text-warning fw-bold"
-                  }
-                >
-                  {o.payment_method} / {o.payment_status}
-                </span>
-              </div>
-
-              {/* Payment Controls */}
-              <div className="mt-3">
-
-                {o.payment_method === "UPI" &&
-                  o.payment_status === "PENDING" && (
-                    <button
-                      className="btn btn-success w-100"
-                      disabled={updatingPayment === o.id}
-                      onClick={() =>
-                        updatePayment(o.id, "PAID")
+                    <span
+                      className={
+                        o.payment_status === "PAID" ||
+                        o.payment_status === "CASH"
+                          ? "payment-confirmed"
+                          : "payment-pending"
                       }
                     >
-                      {updatingPayment === o.id
-                        ? "Confirming..."
-                        : "✓ Confirm UPI Payment"}
-                    </button>
-                  )}
+                      {o.payment_status === "PAID"
+                        ? "✓ Paid"
+                        : o.payment_status === "CASH"
+                        ? "✓ Cash Received"
+                        : "Payment Pending"}
+                    </span>
+                  </div>
+                </div>
 
-                {o.payment_method === "UPI" &&
-                  o.payment_status === "PAID" && (
-                    <div className="alert alert-success py-2 mb-0">
-                      ✓ UPI payment confirmed
-                    </div>
-                  )}
+                {/* Payment control */}
+                <div className="px-4 pt-3">
+                  {o.payment_method === "UPI" &&
+                    o.payment_status === "PENDING" && (
+                      <div>
+                        <div className="small text-secondary mb-2">
+                          UPI is a demo confirmation flow. Verify the payment in the customer's UPI app/bank before confirming it here.
+                        </div>
 
-                {o.payment_method === "COD" &&
-                  o.payment_status === "CASH" && (
-                    <div className="alert alert-success py-2 mb-0">
-                      ✓ Cash payment received
-                    </div>
-                  )}
+                        <button
+                          className="btn btn-success w-100"
+                          disabled={updatingPayment === o.id}
+                          onClick={() =>
+                            updatePayment(o.id, "PAID")
+                          }
+                        >
+                          {updatingPayment === o.id
+                            ? "Confirming..."
+                            : "✓ Confirm UPI Payment"}
+                        </button>
+                      </div>
+                    )}
 
-                {o.payment_method === "COD" &&
-                  o.payment_status !== "CASH" && (
-                    <button
-                      className="btn btn-success w-100"
-                      disabled={updatingPayment === o.id}
-                      onClick={() =>
-                        updatePayment(o.id, "CASH")
-                      }
-                    >
-                      {updatingPayment === o.id
-                        ? "Updating..."
-                        : "✓ Mark Cash Received"}
-                    </button>
-                  )}
+                  {o.payment_method === "UPI" &&
+                    o.payment_status === "PAID" && (
+                      <div className="alert alert-success py-2 mb-0">
+                        ✓ UPI payment confirmed
+                      </div>
+                    )}
 
+                  {o.payment_method === "COD" &&
+                    o.payment_status === "CASH" && (
+                      <div className="alert alert-success py-2 mb-0">
+                        ✓ Cash payment received
+                      </div>
+                    )}
+
+                  {o.payment_method === "COD" &&
+                    o.payment_status !== "CASH" && (
+                      <button
+                        className="btn btn-success w-100"
+                        disabled={updatingPayment === o.id}
+                        onClick={() =>
+                          updatePayment(o.id, "CASH")
+                        }
+                      >
+                        {updatingPayment === o.id
+                          ? "Updating..."
+                          : "✓ Mark Cash Received"}
+                      </button>
+                    )}
+                </div>
+
+                {/* Status flow */}
+                <div className="px-4 pt-4 pb-4">
+                  <div className="order-status-flow">
+                    {statuses.map((item, index) => {
+                      const active = index <= currentIndex;
+                      const current =
+                        index === currentIndex;
+
+                      return (
+                        <button
+                          type="button"
+                          key={item.value}
+                          className={`order-status-step ${
+                            active ? "active" : ""
+                          } ${current ? "current" : ""}`}
+                          disabled={
+                            updatingStatus === o.id ||
+                            index > currentIndex + 1
+                          }
+                          onClick={() =>
+                            updateStatus(
+                              o.id,
+                              item.value
+                            )
+                          }
+                          title={
+                            index > currentIndex + 1
+                              ? "Complete the previous step first"
+                              : `Set status to ${item.label}`
+                          }
+                        >
+                          <span>{item.icon}</span>
+                          <small>{item.label}</small>
+                        </button>
+                      );
+                    })}
+                  </div>
+
+                  <p className="small text-secondary text-center mb-0 mt-3">
+                    Move the order from New → Accepted → Preparing → Ready → Delivered.
+                  </p>
+                </div>
               </div>
-
-              {/* Order Status */}
-              <select
-                className="form-select mt-3"
-                value={o.status}
-                onChange={(e) =>
-                  updateStatus(o.id, e.target.value)
-                }
-              >
-                {statuses.map((s) => (
-                  <option key={s} value={s}>
-                    {s}
-                  </option>
-                ))}
-              </select>
-
             </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
     </main>
   );
