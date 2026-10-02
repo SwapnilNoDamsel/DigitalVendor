@@ -1,5 +1,4 @@
 const auth = require("../middleware/auth");
-const upload = require("../middleware/upload");
 const QRCode = require("qrcode");
 // =========================
 // SLUGIFY
@@ -13,7 +12,6 @@ function slugify(value) {
 }
 
 
-const { uploadBufferToCloudinary } = require("../utils/cloudinary");
 
 
 // =========================
@@ -53,9 +51,6 @@ module.exports = (app, db) => {
   app.post(
     "/api/shop",
     auth,
-
-    // Only logo is uploaded now
-    upload.single("logo"),
 
     async (req, res) => {
 
@@ -112,22 +107,6 @@ module.exports = (app, db) => {
         }
 
 
-        // Upload logo to Cloudinary
-        let logoUrl = null;
-
-        if (req.file) {
-
-          const uploadedLogo =
-            await uploadBufferToCloudinary(
-              req.file,
-              "digitalvendor/shop-logos"
-            );
-
-          logoUrl =
-            uploadedLogo.secure_url;
-        }
-
-
         // Save shop
         const [result] = await db.query(
           `INSERT INTO shops
@@ -155,7 +134,7 @@ module.exports = (app, db) => {
             b.address,
             b.openingTime || null,
             b.closingTime || null,
-            logoUrl,
+            null,
             b.upiId || null
           ]
         );
@@ -210,9 +189,6 @@ module.exports = (app, db) => {
     "/api/shop",
     auth,
 
-    // Only logo can be uploaded
-    upload.single("logo"),
-
     async (req, res) => {
 
       try {
@@ -238,25 +214,6 @@ module.exports = (app, db) => {
         const old = rows[0];
 
 
-        // Keep existing logo
-        let logoUrl =
-          old.logo_url;
-
-
-        // Upload new logo if selected
-        if (req.file) {
-
-          const uploadedLogo =
-            await uploadBufferToCloudinary(
-              req.file,
-              "digitalvendor/shop-logos"
-            );
-
-          logoUrl =
-            uploadedLogo.secure_url;
-        }
-
-
         // Update shop
         await db.query(
           `UPDATE shops SET
@@ -267,7 +224,6 @@ module.exports = (app, db) => {
             address=?,
             opening_time=?,
             closing_time=?,
-            logo_url=?,
             upi_id=?
           WHERE vendor_id=?`,
           [
@@ -278,7 +234,6 @@ module.exports = (app, db) => {
             b.address,
             b.openingTime || null,
             b.closingTime || null,
-            logoUrl,
             b.upiId || null,
             req.vendor.id
           ]
@@ -289,9 +244,6 @@ module.exports = (app, db) => {
 
           message:
             "Shop updated successfully",
-
-          logo_url:
-            logoUrl,
 
           upi_id:
             b.upiId || null

@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import api, { BACKEND } from "../api";
+import api from "../api";
 
 const blank = {
   shopName: "",
@@ -15,7 +15,6 @@ const blank = {
 
 export default function ShopSetup() {
   const [form, setForm] = useState(blank);
-  const [logo, setLogo] = useState(null);
   const [shop, setShop] = useState(null);
   const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
@@ -73,42 +72,34 @@ export default function ShopSetup() {
     setError("");
 
     try {
-      const fd = new FormData();
-
-      fd.append("shopName", form.shopName);
-      fd.append("category", form.category);
-      fd.append("ownerName", form.ownerName);
-      fd.append("mobile", form.mobile);
-      fd.append("address", form.address);
-      fd.append("openingTime", form.openingTime);
-      fd.append("closingTime", form.closingTime);
-      fd.append("upiId", form.upiId);
-
-      // Only shop logo is uploaded.
-      if (logo) {
-        fd.append("logo", logo);
-      }
+      const payload = {
+        shopName: form.shopName,
+        category: form.category,
+        ownerName: form.ownerName,
+        mobile: form.mobile,
+        address: form.address,
+        openingTime: form.openingTime,
+        closingTime: form.closingTime,
+        upiId: form.upiId
+      };
 
       let r;
 
       if (shop) {
-        r = await api.put("/shop", fd);
+        r = await api.put("/shop", payload);
 
         // Reload shop after update
         const rr = await api.get("/shop/me");
 
         setShop(rr.data);
       } else {
-        r = await api.post("/shop", fd);
+        r = await api.post("/shop", payload);
 
         setShop({
           id: r.data.id,
           slug: r.data.slug
         });
       }
-
-      // Clear selected logo after successful save
-      setLogo(null);
 
     } catch (e) {
       console.error("SHOP SAVE ERROR:", e);
@@ -127,15 +118,6 @@ export default function ShopSetup() {
   // =========================
   const url = shop?.slug
     ? `${window.location.origin}/shop/${shop.slug}`
-    : "";
-
-  // =========================
-  // LOGO URL
-  // =========================
-  const logoUrl = shop?.logo_url
-    ? shop.logo_url.startsWith("http")
-      ? shop.logo_url
-      : `${BACKEND}${shop.logo_url}`
     : "";
 
   return (
@@ -178,33 +160,6 @@ export default function ShopSetup() {
               {error && (
                 <div className="alert alert-danger">
                   {error}
-                </div>
-              )}
-
-
-              {/* =========================
-                  EXISTING LOGO
-              ========================= */}
-              {logoUrl && (
-                <div className="mb-4">
-
-                  <label className="form-label">
-                    Current Shop Logo
-                  </label>
-
-                  <div>
-                    <img
-                      src={logoUrl}
-                      alt="Shop logo"
-                      style={{
-                        width: "100px",
-                        height: "100px",
-                        objectFit: "cover",
-                        borderRadius: "12px"
-                      }}
-                    />
-                  </div>
-
                 </div>
               )}
 
@@ -331,30 +286,6 @@ export default function ShopSetup() {
                   onChange={change}
                   required
                 />
-
-
-                {/* =========================
-                    SHOP LOGO
-                ========================= */}
-                <label className="form-label">
-                  Shop Logo{" "}
-                  <small className="text-secondary">
-                    (optional)
-                  </small>
-                </label>
-
-                <input
-                  type="file"
-                  accept="image/jpeg,image/png,image/webp,image/jpg"
-                  className="form-control mb-3"
-                  onChange={(e) =>
-                    setLogo(e.target.files?.[0] || null)
-                  }
-                />
-
-                <small className="text-secondary d-block mb-3">
-                  JPG, PNG or WEBP. Maximum 4 MB.
-                </small>
 
 
                 {/* =========================
